@@ -1,6 +1,18 @@
 # AI Traffic Management System
 An AI based traffic management system with real-time monitoring
 
+## Tags
+- computer-vision
+- traffic-management
+- yolo
+- flask
+- react
+- genetic-algorithm
+- reinforcement-learning
+- docker
+- devops
+
+
 ## Overview
 
 The Smart Adaptive Traffic Management System leverages AI and computer vision to optimize traffic flow at intersections. This system analyzes vehicle counts from video feeds, processes the data using machine learning models, and adjusts traffic signal timings to improve traffic flow.
@@ -91,6 +103,10 @@ npm start
 ```
 
 ### Usage
+
+Two modes:
+- **Web upload**: Use the UI to upload 4 videos; backend optimizes timing.
+- **Live cameras**: `python app.py --real` with 4 RTSP/HTTP/device sources.
 
 Upload Traffic Videos: <br/>
 Use the web interface to upload 4 traffic videos. The system will process the videos and display optimized green light times based on the analysis.
