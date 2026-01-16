@@ -8,10 +8,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
-echo "========================================="
-echo "  Permission Fix Script"
-echo "========================================="
-echo ""
+cat << "EOF"
+  ____  _____ ____  __  __ ___ ____ ____ ___ ___  _   _ ____  
+ |  _ \| ____|  _ \|  \/  |_ _/ ___/ ___|_ _/ _ \| \ | / ___| 
+ | |_) |  _| | |_) | |\/| || |\___ \___ \| | | | |  \| \___ \ 
+ |  __/| |___|  _ <| |  | || | ___) |__) | | |_| | |\  |___) |
+ |_|   |_____|_| \_\_|  |_|___|____/____/___\___/|_| \_|____/ 
+                                                               
+===============================================================
+EOF
 
 # Check what fix is needed
 echo "Select fix type:"
@@ -23,7 +28,7 @@ read -p "Enter choice [1-3]: " CHOICE
 
 fix_upload_permissions() {
     echo ""
-    echo "=== Fixing upload directory permissions ==="
+    echo ">>> Fixing upload directory permissions"
     
     # Ensure directories exist
     mkdir -p backend/uploads backend/outputs backend/data
@@ -36,9 +41,9 @@ fix_upload_permissions() {
     echo ""
     echo "Restarting backend container..."
     if command -v docker-compose &> /dev/null; then
-        docker-compose restart backend 2>/dev/null && echo "✓ Container restarted" || echo "Container not running or not found"
+        docker-compose restart backend 2>/dev/null && echo " [ OK ] Container restarted" || echo " [ !! ] Container not running or not found"
     elif command -v docker &> /dev/null; then
-        docker restart traffic-backend 2>/dev/null && echo "✓ Container restarted" || echo "Container not running or not found"
+        docker restart traffic-backend 2>/dev/null && echo " [ OK ] Container restarted" || echo " [ !! ] Container not running or not found"
     fi
     
     # Wait and test
@@ -46,20 +51,20 @@ fix_upload_permissions() {
     echo ""
     echo "Testing write permissions in container..."
     if docker-compose exec -T backend touch /app/backend/uploads/.test 2>/dev/null; then
-        echo "✓ SUCCESS: Uploads directory is writable!"
+        echo " [ SUCCESS ] Uploads directory is writable!"
         docker-compose exec -T backend rm /app/backend/uploads/.test 2>/dev/null
     else
-        echo "Container not running or test failed"
+        echo " [ FAILURE ] Container not running or test failed"
     fi
 }
 
 fix_docker_permissions() {
     echo ""
-    echo "=== Fixing Docker group permissions ==="
+    echo ">>> Fixing Docker group permissions"
     
     # Check if Docker daemon is running
     if sudo systemctl is-active --quiet docker 2>/dev/null; then
-        echo "✓ Docker daemon is running"
+        echo " [ OK ] Docker daemon is running"
     else
         echo "Starting Docker daemon..."
         sudo systemctl start docker
@@ -70,7 +75,7 @@ fix_docker_permissions() {
     sudo usermod -aG docker $USER
     
     echo ""
-    echo "✓ Done! To apply changes, choose one:"
+    echo " [ DONE ] To apply changes, choose one:"
     echo "  1) Run: newgrp docker"
     echo "  2) Log out and log back in"
     echo "  3) Reboot your system"
