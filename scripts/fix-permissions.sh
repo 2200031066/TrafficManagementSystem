@@ -35,19 +35,19 @@ fix_upload_permissions() {
     # Try to restart container
     echo ""
     echo "Restarting backend container..."
-    if command -v docker &> /dev/null; then
+    if command -v docker-compose &> /dev/null; then
+        docker-compose restart backend 2>/dev/null && echo "✓ Container restarted" || echo "Container not running or not found"
+    elif command -v docker &> /dev/null; then
         docker restart traffic-backend 2>/dev/null && echo "✓ Container restarted" || echo "Container not running or not found"
-    elif command -v podman &> /dev/null; then
-        podman restart traffic-backend 2>/dev/null && echo "✓ Container restarted" || echo "Container not running or not found"
     fi
     
     # Wait and test
     sleep 3
     echo ""
     echo "Testing write permissions in container..."
-    if docker exec traffic-backend touch /app/uploads/.test 2>/dev/null; then
+    if docker-compose exec -T backend touch /app/backend/uploads/.test 2>/dev/null; then
         echo "✓ SUCCESS: Uploads directory is writable!"
-        docker exec traffic-backend rm /app/uploads/.test 2>/dev/null
+        docker-compose exec -T backend rm /app/backend/uploads/.test 2>/dev/null
     else
         echo "Container not running or test failed"
     fi

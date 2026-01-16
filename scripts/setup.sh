@@ -444,14 +444,13 @@ echo "  4. View optimized traffic signal timings!"
 echo ""
 
 echo " Documentation:"
-echo "  • QUICK_START.md - Quick reference guide"
-echo "  • README.Docker.md - Docker documentation"
+echo "  • docs/docker/README.md - Detailed Docker documentation"
 echo "  • README.md - Project overview"
 echo ""
 
 echo " Need Help?"
 echo "  • Check logs for errors"
-echo "  • Read troubleshooting in README.Docker.md"
+echo "  • Read troubleshooting in docs/docker/README.md"
 echo "  • Verify health: curl http://localhost:5000/health"
 echo ""
 

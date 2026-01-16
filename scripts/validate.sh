@@ -50,7 +50,8 @@ REQUIRED_FILES=(
     "frontend/.env.example"
     "frontend/nginx.conf"
     "docs/docker/README.md"
-    "docs/docker/QUICK_START.md"
+    "docs/backend/README.md"
+    "docs/frontend/README.md"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

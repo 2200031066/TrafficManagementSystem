@@ -1,10 +1,10 @@
 #!/bin/bash
 
 echo "Stopping Docker services...."
-sudo systemctl stop docker docker.socket containered
+sudo systemctl stop docker docker.socket containerd
 
 echo "Disabling docker auto-start..."
-sudo systemctl disable docker docker.socket containered
+sudo systemctl disable docker docker.socket containerd
 
 echo "<!----------------------------------------!>"
 echo "two step verification.... for ur satisfaction"
@@ -15,8 +15,8 @@ systemctl is-enabled docker 2>/dev/null || echo "disabled"
 echo -n "docker.socket enabled: "
 systemctl is-enabled docker.socket 2>/dev/null || echo "disabled"
 
-echo -n "containered enabled: "
-systemctl is-enabled containered 2>/dev/null || echo "disabled"
+echo -n "containerd enabled: "
+systemctl is-enabled containerd 2>/dev/null || echo "disabled"
 
 echo ""
 echo "docker status:"
