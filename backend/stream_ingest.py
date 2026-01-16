@@ -10,7 +10,7 @@ from typing import List, Tuple
 
 import cv2 as cv
 
-from yolov4 import _create_model, VEHICLE_CLASSES, CONF_THRESHOLD, NMS_THRESHOLD
+from yolov4 import create_model, VEHICLE_CLASSES, CONF_THRESHOLD, NMS_THRESHOLD
 from app import run_cpp_optimizer
 from rl_agent import get_rl_recommendation
 
@@ -54,7 +54,7 @@ def detect_single_stream(source: str, model, class_names, warmup_frames: int = 5
 
 def detect_cameras(camera_sources: List[str]) -> Tuple[List[int], List[str]]:
     """Detect vehicles on a list of camera sources sequentially."""
-    model, class_names = _create_model()
+    model, class_names = create_model()
     counts = []
     errors = []
 

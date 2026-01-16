@@ -48,7 +48,7 @@ def get_optimal_backend():
     print("[YOLO] Using CPU backend", flush=True)
     return cv.dnn.DNN_BACKEND_DEFAULT, cv.dnn.DNN_TARGET_CPU
 
-def _create_model():
+def create_model():
     """Create a new model instance (for use in subprocess)."""
     # <!--- Choose files based on MODEL_TYPE ---->
     if MODEL_TYPE == 'full':
@@ -87,7 +87,7 @@ def _detect_cars_worker(video_file, result_queue, worker_id):
         print(f"[YOLO-W{worker_id}] Starting detection for {video_file}", flush=True)
         
         # <!--- Each worker creates its own model --->
-        model, class_names = _create_model()
+        model, class_names = create_model()
         
         if not os.path.exists(video_file):
             result_queue.put((worker_id, video_file, None, f"File not found: {video_file}"))
@@ -120,11 +120,6 @@ def _detect_cars_worker(video_file, result_queue, worker_id):
                 vehicle_count = sum(1 for cid in classes if class_names[cid] in VEHICLE_CLASSES)
                 car_counts.append(vehicle_count)
                 processed_count += 1
-
-                if len(car_counts) >= 30:
-                    recent = car_counts[-30:]
-                    if max(recent) == min(recent):
-                        break
                 
                 # <!--- Progress update every 100 processed frames --->
                 if processed_count % 100 == 0:
