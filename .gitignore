@@ -23,6 +23,10 @@ data/*.log
 *.mov
 *.mkv
 *.webm
+*.jpg
+*.jpeg
+*.png
+*.gif
 
 # C++ Binaries and Objects
 backend/Algo
