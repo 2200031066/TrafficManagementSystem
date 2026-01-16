@@ -1,10 +1,9 @@
-# Dynamic-Traffic-Management-System
+# AI Traffic Management System
 An AI based traffic management system with real-time monitoring
 
 ## Overview
 
 The Smart Adaptive Traffic Management System leverages AI and computer vision to optimize traffic flow at intersections. This system analyzes vehicle counts from video feeds, processes the data using machine learning models, and adjusts traffic signal timings to improve traffic flow.
-
 
 
 ## Features
