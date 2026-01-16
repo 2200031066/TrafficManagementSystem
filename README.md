@@ -20,14 +20,6 @@ The **Smart Adaptive Traffic Management System** isn't just a signal controller;
 
 ---
 
-##  See it in Action
-
-| **Real-time Detection** | **Dashboard Analytics** |
-|:-------------------:|:-------------------:|
-| ![Detection Demo](https://via.placeholder.com/400x225.png?text=YOLO+Detection+GIF+Coming+Soon) *Process live feeds to count vehicles instantly.* | ![Dashboard Demo](https://via.placeholder.com/400x225.png?text=Dashboard+UI+GIF+Coming+Soon) *Visualize data and control signals from a sleek UI.* |
-
----
-
 ##  Features
 
 - ** Eagle-Eye Detection:** Utilizes **YOLOv4** for state-of-the-art vehicle detection and counting.
