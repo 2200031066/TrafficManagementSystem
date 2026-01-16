@@ -1,4 +1,6 @@
-#  AI Traffic Management System
+# AI Traffic Management System
+
+<div align="center">
 
 [![Frontend](https://img.shields.io/badge/frontend-React-61dafb?logo=react&logoColor=white)](https://reactjs.org/)
 [![Backend](https://img.shields.io/badge/backend-Flask-000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
@@ -6,115 +8,118 @@
 [![Optimizer](https://img.shields.io/badge/optimizer-C%2B%2B17-00599c?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![Container](https://img.shields.io/badge/infra-Docker-2496ed?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-> **Revolutionizing urban flow with intelligent, adaptive real-time monitoring.**
+<h3>Revolutionizing urban flow with intelligent, adaptive real-time monitoring.</h3>
 
----
-
-##  Overview
-
-The **Smart Adaptive Traffic Management System** isn't just a signal controller; it's a brain for city intersections. By fusing **Computer Vision (YOLOv4)** with **High-Performance Computing (C++)**, we analyze live video feeds to dynamically adjust traffic signal timings.
-
-**The Goal?** Minimize wait times, reduce congestion, and get everyone where they're going faster. 
+</div>
 
 ---
 
-##  Features
+## 📖 Overview
 
-- ** Eagle-Eye Detection:** Utilizes **YOLOv4** for state-of-the-art vehicle detection and counting.
-- ** Intelligent Optimization:** Runs a genetic algorithm in **C++** for lightning-fast signal timing adjustments.
-- ** Interactive Dashboard:** A modern **React** frontend to upload videos, view live analytics, and monitor system health.
-- ** Multi-Source Input:** Support for uploaded video files or live RTSP camera feeds.
-- ** Dockerized:** Fully containerized for easy deployment anywhere.
+The **Smart Adaptive Traffic Management System** is an advanced solution designed to optimize traffic flow at intersections. By combining **Computer Vision (YOLOv4)** with **High-Performance Computing (C++)**, the system analyzes real-time video feeds to count vehicles and dynamically adjust traffic signal timings.
+
+**Key Goal:** Minimize congestion and wait times using data-driven decision making.
 
 ---
 
-##  Tech Stack
+## ✨ Key Features
 
-- **Frontend:** React, Material UI
-- **Backend:** Flask (Python)
-- **AI/ML:** YOLOv4, OpenCV
-- **Core Logic:** C++17 (Genetic Algorithm)
-- **DevOps:** Docker, Docker Compose
+- **👁️ Real-Time Detection:** Accurate vehicle counting using **YOLOv4**.
+- **🧠 AI Optimization:** Genetic algorithms (C++) calculate optimal green light durations.
+- **📊 Modern Dashboard:** React-based UI for uploading videos, viewing analytics, and system monitoring.
+- **📹 flexible Input:** Supports both uploaded video files and live RTSP camera feeds.
+- **🐳 Docker Ready:** Fully containerized for consistent deployment across environments.
 
 ---
 
-##  Getting Started
+## 🛠️ Technology Stack
+
+| Component | Tech | Description |
+|-----------|------|-------------|
+| **Frontend** | React | Responsive dashboard for monitoring & control |
+| **Backend** | Flask | REST API to bridge UI and Core Logic |
+| **Vision** | YOLOv4 + OpenCV | Object detection & image processing |
+| **Core** | C++17 | Genetic Algorithm for signal optimization |
+| **DevOps** | Docker | Containerization & Orchestration |
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- [Docker Engine](https://docs.docker.com/engine/install/) 20.10+
-- [Docker Compose](https://docs.docker.com/compose/install/) 2.0+
-- 4GB+ RAM (AI models are hungry! Try to feed moree...)
+- [Docker Engine](https://docs.docker.com/engine/install/) & [Docker Compose](https://docs.docker.com/compose/install/)
+- **Recommended:** 4GB+ RAM
 
-###  Quick Start (Recommended)
+### ⚡ Installation (The Easy Way)
 
-We have a magic script to set everything up for you!
+We use a `Makefile` to simplify common tasks.
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/yourusername/CaProject.git
-cd CaProject
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/yourusername/TrafficManagementSystem.git
+    cd TrafficManagementSystem
+    ```
 
-# 2. Run the interactive setup script
-bash scripts/setup.sh
-```
-Follow the on-screen instructions to choose between Docker (recommended) or Manual setup.
+2.  **Setup & Run:**
+    ```bash
+    make setup  # Downloads weights & builds images
+    make up     # Starts the system
+    ```
 
-**Access points:**
+That's it! The system is now running.
+
 - **Frontend:** [http://localhost:3000](http://localhost:3000)
-- **API:** [http://localhost:5000](http://localhost:5000)
-- **Health Check:** [http://localhost:5000/health](http://localhost:5000/health)
+- **Backend API:** [http://localhost:5000](http://localhost:5000)
 
-###  Manual Setup (Without Script)
+### 🕹️ Commands
+
+| Command | Description |
+|---------|-------------|
+| `make setup` | Prepare environment (download weights, build images) |
+| `make up` | Start services in production mode |
+| `make dev` | Start services in development mode (hot-reload) |
+| `make logs` | Tail logs from all containers |
+| `make down` | Stop all services |
+| `make help` | Show all available commands |
+
+---
+
+## 🧪 Manual Setup (No Docker)
 
 <details>
-<summary>Click to expand manual instructions</summary>
+<summary>Click to view manual installation steps</summary>
 
-**Backend:**
-```bash
-cd backend
-pip install -r requirements.txt
-bash download.sh  # Download weights
-g++ -std=c++17 -O3 -fopenmp -o Algo1 Algo.cpp
-python app.py
-```
+### Backend
+1. Navigate to backend: `cd backend`
+2. Install Python deps: `pip install -r requirements.txt`
+3. Download weights: `bash download.sh`
+4. Compile C++ algorithm: `g++ -std=c++17 -O3 -fopenmp -o Algo1 Algo.cpp`
+5. Run server: `python app.py`
 
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm start
-```
+### Frontend
+1. Navigate to frontend: `cd frontend`
+2. Install dependencies: `npm install`
+3. Start server: `npm start`
+
 </details>
 
 ---
 
-##  Usage Modes
+## 🤝 Contributing
 
-1.  **File Upload Mode:** Upload 4 video files representing an intersection via the Web UI.
-2.  **Live Camera Mode:** Connect 4 RTSP streams for real-time management.
-    ```bash
-    # Example
-    python app.py --real --camera rtsp://cam1 --camera rtsp://cam2 ...
-    ```
-
----
-
-##  Contributing
-
-Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+We welcome contributions!
 
 1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+2.  Create your Feature Branch (`git checkout -b feature/NewFeature`)
+3.  Commit your Changes (`git commit -m 'Add NewFeature'`)
+4.  Push to the Branch (`git push origin feature/NewFeature`)
 5.  Open a Pull Request
 
 ---
 
-##  Acknowledgments
+## 📜 Acknowledgments
 
-- **YOLOv4** for the incredible object detection speed and accuracy.
-- **OpenCV** for making computer vision accessible.
-- The open-source community for all the amazing tools.
+- **YOLOv4:** For state-of-the-art object detection.
+- **OpenCV:** For powerful image processing capabilities.
+- **Darknet:** For the neural network framework.
