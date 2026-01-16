@@ -9,8 +9,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (including devDependencies for build tools like env-cmd)
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -18,6 +18,7 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Prune dev dependencies for cleaner image (optional, but builder stage is discarded anyway)
 # Stage 2: Production
 FROM nginx:alpine
 

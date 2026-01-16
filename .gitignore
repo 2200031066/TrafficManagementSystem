@@ -4,7 +4,6 @@
 .env.*.local
 .venv/
 venv/
-env/
 
 # Node modules and build
 node_modules/
@@ -48,6 +47,3 @@ yarn-error.log*
 # System
 .DS_Store
 Thumbs.db
-
-# Lock files (keep package.json)
-package-lock.json
