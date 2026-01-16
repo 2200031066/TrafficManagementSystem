@@ -49,7 +49,7 @@ The AI Traffic Management System is an end-to-end solution designed to reduce ur
 - Minimum 4GB RAM recommended for AI model inference
 
 ### Automated Setup (Recommended)
-The project includes a Makefile to automate common deployment tasks.
+The project includes a Makefile to automate common deployment tasks. For detailed information regarding containerization and orchestration, please refer to the [Docker Documentation](docs/docker/README.md).
 
 1. **Clone the repository**
    ```bash
@@ -72,6 +72,12 @@ The application will be accessible at:
 - **Web Dashboard:** http://localhost:3000
 - **Backend API:** http://localhost:5000
 - **API Health Check:** http://localhost:5000/health
+
+---
+
+## Docker Deployment
+
+The application is fully containerized using Docker and Docker Compose. This ensures a consistent environment for both development and production. For comprehensive instructions on building, running, and troubleshooting the Docker containers, see the [Detailed Docker Guide](docs/docker/README.md).
 
 ---
 
