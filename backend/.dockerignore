@@ -1,0 +1,33 @@
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv/
+ENV/
+env/
+
+# Uploads and outputs (will be mounted as volumes)
+uploads/*
+outputs/*
+
+# Data directory (mounted as volume)
+data/*.csv
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Compiled binaries (will be rebuilt)
+Algo
+Algo1
+
+# Git
+.git
+.gitignore
