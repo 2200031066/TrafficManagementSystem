@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
-set -e
 
-BASE_URL="https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4"
+set -euo pipefail
 
-FILES=("yolov4.cfg" "yolov4.weights")
+BASE_URL="https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre"
+FILES=(
+  "yolov4.cfg"
+  "yolov4.weights"
+  "yolov4-tiny.cfg"
+  "yolov4-tiny.weights"
+)
 
-for f in "${FILES[@]}"; do
-    if [[ -f "$f" ]]; then
-        echo "[skip] $f already exists"
-    else
-        echo "[download] $f"
-        curl -L -o "$f" "$BASE_URL/$f"
-    fi
-done
+download() {
+  local file="$1"
+  if [[ -f "$file" ]]; then
+    echo "[skip] $file already exists"
+    return
+  fi
+  echo "[download] $file"
+  curl -L -o "$file" "$BASE_URL/$file"
+}
 
-echo "Download complete. Files are now in $(pwd)"
+main() {
+  for f in "${FILES[@]}"; do
+    download "$f"
+  done
+  echo "YOLO files ready in $(pwd)"
+}
+
+main "$@"
