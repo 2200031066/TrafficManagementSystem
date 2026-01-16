@@ -7,10 +7,6 @@
 
 An AI based traffic management system with real-time monitoring
 
-## Demo
-
-![Traffic demo placeholder](https://dummyimage.com/960x540/0b1c2c/ffffff&text=Traffic+Flow+Demo+GIF+Placeholder)
-
 ## Overview
 
 The Smart Adaptive Traffic Management System leverages AI and computer vision to optimize traffic flow at intersections. This system analyzes vehicle counts from video feeds, processes the data using machine learning models, and adjusts traffic signal timings to improve traffic flow.
