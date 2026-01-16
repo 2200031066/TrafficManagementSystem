@@ -1,21 +1,92 @@
 # app.py
-from flask import Flask, request, jsonify, current_app
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import subprocess
 import json
-import threading
+import argparse
 from yolov4 import detect_cars
 import time
 import re
+from rl_agent import get_rl_recommendation
+
+from csv_logger import log_result, log_analytics, get_results_summary, get_analytics_summary, get_recent_data
+from collections import defaultdict
+from functools import wraps
 
 
 app = Flask(__name__)
 CORS(app)
 
+# Request/Upload limits (per file and overall request)
+MAX_UPLOAD_SIZE_MB = int(os.environ.get("MAX_UPLOAD_SIZE_MB", "200"))
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_SIZE_MB * 4 * 1024 * 1024  # 4 files
 
-GA_BINARY = os.path.abspath("./Algo")
+# Ensure uploads directory exists and is writable at startup
+UPLOADS_DIR = os.path.abspath('uploads')
+try:
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+    # Test write permissions
+    test_file = os.path.join(UPLOADS_DIR, '.write_test')
+    with open(test_file, 'w') as f:
+        f.write('test')
+    os.remove(test_file)
+    app.logger.info(f"Uploads directory ready: {UPLOADS_DIR}")
+except Exception as e:
+    app.logger.error(f"Failed to initialize uploads directory: {e}")
+    app.logger.error(f"Directory: {UPLOADS_DIR}, exists: {os.path.exists(UPLOADS_DIR)}")
+    if os.path.exists(UPLOADS_DIR):
+        import stat
+        st = os.stat(UPLOADS_DIR)
+        app.logger.error(f"Permissions: {oct(st.st_mode)}, Owner: {st.st_uid}:{st.st_gid}")
+
+# --- Rate Limiting ---
+RATE_LIMIT_REQUESTS = 10  # Max requests
+RATE_LIMIT_WINDOW = 60    # Per 60 seconds
+request_counts = defaultdict(list)  # IP -> list of timestamps
+
+def rate_limit(func):
+    """Simple rate limiter decorator."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        client_ip = request.remote_addr or 'unknown'
+        now = time.time()
+        
+        # Clean old timestamps
+        request_counts[client_ip] = [
+            ts for ts in request_counts[client_ip] 
+            if now - ts < RATE_LIMIT_WINDOW
+        ]
+        
+        # Check rate limit
+        if len(request_counts[client_ip]) >= RATE_LIMIT_REQUESTS:
+            app.logger.warning(f"Rate limit exceeded for {client_ip}")
+            return jsonify({
+                'error': 'Rate limit exceeded',
+                'detail': f'Max {RATE_LIMIT_REQUESTS} requests per {RATE_LIMIT_WINDOW} seconds',
+                'retry_after': int(RATE_LIMIT_WINDOW - (now - request_counts[client_ip][0]))
+            }), 429
+        
+        # Record this request
+        request_counts[client_ip].append(now)
+        return func(*args, **kwargs)
+    return wrapper
+
+
+GA_BINARY = os.path.abspath("./Algo1")
 MAX_LOG_LINES = 500
+
+# Allowed video extensions for validation
+ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv'}
+ALLOWED_VIDEO_MIME_PREFIXES = ('video/',)
+
+def is_valid_video_file(filename):
+    """Check if file has a valid video extension."""
+    if not filename:
+        return False
+    ext = os.path.splitext(filename.lower())[1]
+    return ext in ALLOWED_VIDEO_EXTENSIONS
+
 
 _RE_INVOC = re.compile(r"cars\s*=\s*\[?([\d,\s]+)\]?")
 _RE_START = re.compile(r"pop_size=(\d+)\s+max_iter=(\d+)\s+green_min=(\d+)\s+green_max=(\d+)\s+cycle_time=(\d+)")
@@ -134,69 +205,10 @@ def run_cpp_optimizer(cars, timeout_seconds=20, verbose=True):
         }
 
     if proc.returncode != 0:
-        parsed_stdout["_error"] = "C++ returned non-zero exit code"
+        parsed_stdout["error"] = "C++ returned non-zero exit code"
         parsed_stdout["_returncode"] = proc.returncode
 
     return parsed_stdout
-
-def run_cpp_optimizer_stream(cars, timeout_seconds=60, verbose=True):
-    """
-    Stream runner: starts the C++ binary and forwards stderr lines to Flask logger
-    in real time. Returns parsed stdout JSON at the end. Useful for live console logs.
-    """
-    if not os.path.exists(GA_BINARY):
-        return {"error": "C++ binary not found", "path": GA_BINARY}
-
-    try:
-        args = [GA_BINARY] + [str(int(x)) for x in cars]
-    except Exception as e:
-        return {"error": "invalid input for optimizer", "detail": str(e)}
-
-    if verbose:
-        args.append("--verbose")
-
-    try:
-        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
-    except Exception as e:
-        return {"error": "failed to start C++ binary", "detail": str(e)}
-
-    stderr_lines = []
-
-    def forward_stderr(stderr_pipe):
-        for line in stderr_pipe:
-            line = line.rstrip("\n")
-            stderr_lines.append(line)
-            try:
-                current_app.logger.info("[GA] %s", line)
-            except RuntimeError:
-                print("[GA]", line)
-        stderr_pipe.close()
-
-    stderr_thread = threading.Thread(target=forward_stderr, args=(proc.stderr,), daemon=True)
-    stderr_thread.start()
-
-    try:
-        stdout, _ = proc.communicate(timeout=timeout_seconds)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        stderr_thread.join(timeout=1)
-        return {"error": "C++ optimizer timed out and was killed"}
-
-    stderr_thread.join(timeout=1)
-
-    stdout = (stdout or "").strip()
-    combined_stderr = "\n".join(stderr_lines).strip()
-
-    if proc.returncode != 0:
-        return {"error": "C++ failed", "returncode": proc.returncode, "stdout": stdout, "stderr": combined_stderr}
-
-    try:
-        parsed = json.loads(stdout)
-    except Exception:
-        parsed = {"raw_stdout": stdout}
-
-    parsed["_logs_stderr"] = combined_stderr
-    return parsed
 
 @app.route('/test_optimize', methods=['POST'])
 def test_optimize():
@@ -215,9 +227,30 @@ def test_optimize():
     return jsonify(result), 200
 
 
-DEBUG_UPLOAD = os.environ.get("DEBUG_UPLOAD", "1") == "1" 
+DEBUG_UPLOAD = os.environ.get("DEBUG_UPLOAD", "1") == "1"
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring."""
+    status = {
+        'status': 'healthy',
+        'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'components': {
+            'api': 'ok',
+            'ga_binary': 'ok' if os.path.exists(GA_BINARY) else 'missing',
+            'yolo_weights': 'ok' if os.path.exists('yolov4-tiny.weights') else 'missing',
+            'yolo_config': 'ok' if os.path.exists('yolov4-tiny.cfg') else 'missing'
+        }
+    }
+    # Overall status is unhealthy if any component is missing
+    if 'missing' in status['components'].values():
+        status['status'] = 'degraded'
+        return jsonify(status), 503
+    return jsonify(status), 200
+
 
 @app.route('/upload', methods=['POST'])
+@rate_limit
 def upload_files():
     start_ts = time.time()
     app.logger.info("Received /upload request")
@@ -228,51 +261,132 @@ def upload_files():
         app.logger.error(msg)
         return jsonify({'error': 'Please upload exactly 4 videos', 'detail': msg}), 400
 
-    if not os.path.exists('uploads'):
-        os.makedirs('uploads', exist_ok=True)
+    # Validate video file formats
+    invalid_files = []
+    invalid_mime = []
+    oversized_files = []
+    for i, f in enumerate(files):
+        if not is_valid_video_file(f.filename):
+            invalid_files.append({'index': i, 'filename': f.filename})
+            continue
+        
+        mimetype = (f.mimetype or '').lower()
+        if mimetype and not mimetype.startswith(ALLOWED_VIDEO_MIME_PREFIXES):
+            invalid_mime.append({'index': i, 'filename': f.filename, 'mimetype': mimetype})
+        
+        size_bytes = f.content_length
+        if size_bytes is None:
+            try:
+                pos = f.stream.tell()
+                f.stream.seek(0, os.SEEK_END)
+                size_bytes = f.stream.tell()
+                f.stream.seek(pos)
+            except Exception:
+                size_bytes = None
+        
+        if size_bytes is not None and size_bytes > MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+            oversized_files.append({
+                'index': i,
+                'filename': f.filename,
+                'size_mb': round(size_bytes / (1024 * 1024), 2)
+            })
+    
+    if invalid_files:
+        app.logger.error(f"Invalid video formats: {invalid_files}")
+        return jsonify({
+            'error': 'Invalid video format detected',
+            'detail': f'Supported formats: {list(ALLOWED_VIDEO_EXTENSIONS)}',
+            'invalid_files': invalid_files
+        }), 400
+    
+    if invalid_mime:
+        app.logger.error(f"Invalid MIME types: {invalid_mime}")
+        return jsonify({
+            'error': 'Invalid video MIME type detected',
+            'detail': 'Only video MIME types are allowed',
+            'invalid_files': invalid_mime
+        }), 400
+    
+    if oversized_files:
+        app.logger.error(f"Oversized uploads: {oversized_files}")
+        return jsonify({
+            'error': 'File too large',
+            'detail': f'Maximum allowed size is {MAX_UPLOAD_SIZE_MB} MB per file',
+            'invalid_files': oversized_files
+        }), 400
+
+
+    # Ensure uploads directory exists
+    try:
+        os.makedirs(UPLOADS_DIR, exist_ok=True)
+    except Exception as e:
+        app.logger.error(f"Cannot create uploads directory: {e}")
+        return jsonify({"error": "Server configuration error", "detail": f"Cannot create uploads directory: {str(e)}"}), 500
 
     video_paths = []
     save_errors = []
     for i, file in enumerate(files):
-        video_path = os.path.join('uploads', f'video_{i}.mp4')
+        video_path = os.path.join(UPLOADS_DIR, f'video_{i}.mp4')
         try:
+            app.logger.info(f"Attempting to save file {i} to: {video_path}")
             file.save(video_path)
-            app.logger.info("Saved uploaded file -> %s", video_path)
+            app.logger.info(f"Successfully saved uploaded file -> {video_path}")
             video_paths.append(video_path)
+        except PermissionError as e:
+            app.logger.exception(f"Permission denied saving to {video_path}")
+            save_errors.append({"index": i, "path": video_path, "error": f"Permission denied: {str(e)}"})
         except Exception as e:
-            app.logger.exception("Failed to save uploaded file %s", video_path)
+            app.logger.exception(f"Failed to save uploaded file {video_path}")
             save_errors.append({"index": i, "path": video_path, "error": str(e)})
 
     if save_errors:
         return jsonify({"error": "Failed to save uploaded files", "details": save_errors}), 500
 
-    num_cars_list = []
-    detect_logs = []
+    # Import parallel detection function
+    from yolov4 import detect_cars_parallel
     
-    for video_file in video_paths:
-        try:
-            app.logger.info("Running detect_cars on %s", video_file)
-            num_cars = detect_cars(video_file)
-            app.logger.info("detect_cars returned: %s for %s", str(num_cars), video_file)
-            if not isinstance(num_cars, int):
-                try:
-                    num_cars = int(num_cars)
-                    app.logger.info("Casted detect_cars output to int: %d", num_cars)
-                except Exception as e:
-                    app.logger.exception("detect_cars returned non-int and could not be cast")
-                    return jsonify({"error": "detect_cars returned non-integer", "value": str(num_cars)}), 500
-            num_cars_list.append(num_cars)
-            detect_logs.append({"video": video_file, "cars": num_cars})
-        except Exception as e:
-            app.logger.exception("detect_cars raised exception for %s", video_file)
-            return jsonify({'error': 'car detection failed', 'detail': str(e)}), 500
+    # Use parallel processing with multiprocessing (spawn mode - no semaphore leaks)
+    app.logger.info("Starting parallel video detection for %d videos", len(video_paths))
+    
+    try:
+        results, errors = detect_cars_parallel(video_paths, max_workers=2)
+        
+        num_cars_list = results
+        detection_errors = []
+        detect_logs = []
+        
+        for i, (count, error) in enumerate(zip(results, errors)):
+            if error:
+                detection_errors.append({'index': i, 'error': error})
+                detect_logs.append({"video": video_paths[i], "error": error})
+                app.logger.error(f"Detection error for lane {i}: {error}")
+            else:
+                detect_logs.append({"video": video_paths[i], "cars": count})
+                app.logger.info(f"Lane {i}: {count} cars detected")
+                
+    except Exception as e:
+        app.logger.exception("Parallel detection failed")
+        return jsonify({"error": "Video detection failed", "detail": str(e)}), 500
+    
+    # Check if any detections failed
+    if detection_errors:
+        return jsonify({
+            'error': 'Car detection failed for some lanes',
+            'detection_errors': detection_errors,
+            'partial_results': num_cars_list
+        }), 500
 
     app.logger.info("All detections done: %s", num_cars_list)
 
     try:
         app.logger.info("Calling C++ optimizer with cars=%s", num_cars_list)
         result = run_cpp_optimizer(num_cars_list, timeout_seconds=30, verbose=True)
-        app.logger.info("C++ optimizer returned: %s", str(result if isinstance(result, dict) else "<non-dict>"))
+        if isinstance(result, dict):
+            # Log a clean summary without the large raw logs/events
+            log_summary = {k: v for k, v in result.items() if not k.startswith('_log')}
+            app.logger.info("C++ optimizer returned: %s", log_summary)
+        else:
+            app.logger.info("C++ optimizer returned: <non-dict>")
     except Exception as e:
         app.logger.exception("Exception while calling optimizer")
         return jsonify({"error": "Exception while calling optimizer", "detail": str(e)}), 500
@@ -280,10 +394,29 @@ def upload_files():
     if isinstance(result, dict) and result.get("error"):
         app.logger.error("Optimizer error: %s", result)
         result["_detect_info"] = detect_logs
-        result["_elapsed_seconds"] = time.time() - start_ts
+        result["elapsed_seconds"] = time.time() - start_ts
         return jsonify(result), 500
 
-    response = {"result": result}
+    # RL Recommendation
+    try:
+        rl_rec = get_rl_recommendation(num_cars_list, result)
+        app.logger.info("RL Recommendation: %s", str(rl_rec))
+    except Exception as e:
+        app.logger.exception("RL Recommendation failed")
+        rl_rec = {"error": "RL recommendation failed", "detail": str(e)}
+
+    response = {"result": result, "rl_recommendation": rl_rec}
+    
+    # Log to CSV
+    try:
+        delay = result.get('delay', 0) if isinstance(result, dict) else 0
+        elapsed = time.time() - start_ts
+        log_result(num_cars_list, result, rl_rec, delay, elapsed)
+        log_analytics(num_cars_list, result, 'success')
+        app.logger.info("Results logged to CSV")
+    except Exception as e:
+        app.logger.warning("Failed to log to CSV: %s", str(e))
+    
     if DEBUG_UPLOAD:
         logs = None
         if isinstance(result, dict):
@@ -296,39 +429,55 @@ def upload_files():
             response.update(result)
 
     return jsonify(response), 200
-@app.route('/upload_stream', methods=['POST'])
-def upload_files_stream():
 
-    files = request.files.getlist('videos')
-    if len(files) != 4:
-        return jsonify({'error': 'Please upload exactly 4 videos'}), 400
 
-    if not os.path.exists('uploads'):
-        os.makedirs('uploads')
+@app.route('/stats', methods=['GET'])
+def get_stats():
+    """Get summary statistics from CSV logs."""
+    try:
+        results_summary = get_results_summary()
+        analytics_summary = get_analytics_summary()
+        recent_data = get_recent_data(20)
+        return jsonify({
+            'results': results_summary,
+            'analytics': analytics_summary,
+            'recent': recent_data
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    video_paths = []
-    for i, file in enumerate(files):
-        video_path = os.path.join('uploads', f'video_{i}.mp4')
-        file.save(video_path)
-        video_paths.append(video_path)
-
-    num_cars_list = []
-    for video_file in video_paths:
-        try:
-            num_cars = detect_cars(video_file)
-            if not isinstance(num_cars, int):
-                num_cars = int(num_cars)
-        except Exception as e:
-            return jsonify({'error': 'car detection failed', 'detail': str(e)}), 500
-        num_cars_list.append(num_cars)
-
-    result = run_cpp_optimizer_stream(num_cars_list, timeout_seconds=60, verbose=True)
-
-    if isinstance(result, dict) and result.get("error"):
-        return jsonify(result), 500
-    return jsonify(result), 200
 
 if __name__ == '__main__':
-    if not os.path.exists('uploads'):
-        os.makedirs('uploads')
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    parser = argparse.ArgumentParser(description="Traffic optimizer API / live camera runner")
+    parser.add_argument('--real', action='store_true', help='Run live camera ingestion instead of API server')
+    parser.add_argument('--camera', action='append', help='Camera source (use multiple --camera entries, expected 4)')
+    parser.add_argument('--verbose', action='store_true', help='Verbose optimizer output')
+    args = parser.parse_args()
+
+    if args.real:
+        sources = args.camera if args.camera else []
+        if not sources:
+            env_sources = os.environ.get("CAM_SOURCES", "")
+            sources = [s.strip() for s in env_sources.split(",") if s.strip()]
+        if len(sources) != 4:
+            print(f"[Live] Expected 4 camera sources, got {len(sources)}. Provide --camera four times or CAM_SOURCES comma-list.")
+            raise SystemExit(1)
+
+        try:
+            from stream_ingest import run_live_optimization
+        except Exception as e:
+            print(f"[Live] Failed to import stream_ingest: {e}")
+            raise SystemExit(1)
+
+        payload, errors = run_live_optimization(sources, verbose=args.verbose)
+        print("\n=== Live Optimization Result ===")
+        print(payload)
+        if any(errors):
+            print("\nErrors:", errors)
+    else:
+        try:
+            os.makedirs(UPLOADS_DIR, exist_ok=True)
+            app.logger.info(f"Starting Flask app with uploads directory: {UPLOADS_DIR}")
+        except Exception as e:
+            app.logger.error(f"Cannot create uploads directory: {e}")
+        app.run(host='0.0.0.0', port=5000, debug=True)
