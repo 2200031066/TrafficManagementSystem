@@ -24,26 +24,74 @@ The Smart Adaptive Traffic Management System leverages AI and computer vision to
 
 ## Setup
 
-Clone the repository:
+### Option 1: Docker (Recommended)
+
+**Prerequisites:**
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- 4GB+ RAM for Docker
+
+**Quick Start:**
 
 ```bash
+# Clone the repository
 cd TrafficManagementSystem
+
+# Download YOLO weights
+cd backend && bash download.sh && cd ..
+
+# Build and start with Docker Compose
+docker-compose up -d
+
+# Or use Makefile
+make setup  # Download weights and build
+make up     # Start services
 ```
 
-Start the backend server:
+**Access:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- Health Check: http://localhost:5000/health
 
+**Docker Commands:**
+```bash
+make help       # View all commands
+make dev        # Development mode with hot reload
+make logs       # View logs
+make status     # Check container status
+make down       # Stop services
+make clean      # Clean up containers and volumes
+```
+
+See [README.Docker.md](README.Docker.md) for detailed Docker documentation.
+
+### Option 2: Manual Setup
+
+**Backend:**
 ```bash
 cd backend
 pip install -r requirements.txt
+bash download.sh  # Download YOLO weights
+g++ -std=c++17 -O3 -fopenmp -o Algo1 Algo.cpp
 python app.py
 ```
 
-Start the frontend server:
+**Live camera mode (optional):**
+```bash
+# Provide 4 camera sources (RTSP/HTTP URLs or device indices) via flags or CAM_SOURCES env
+python app.py --real --camera rtsp://cam1 --camera rtsp://cam2 --camera rtsp://cam3 --camera 0
+# or
+CAM_SOURCES=rtsp://cam1,rtsp://cam2,rtsp://cam3,0 python app.py --real
+```
+
+**Frontend:**
 ```bash
 cd frontend
 npm install
 npm start
 ```
+
+### Usage
 
 Upload Traffic Videos: <br/>
 Use the web interface to upload 4 traffic videos. The system will process the videos and display optimized green light times based on the analysis.
