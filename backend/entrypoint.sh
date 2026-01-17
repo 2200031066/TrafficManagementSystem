@@ -1,14 +1,31 @@
 #!/bin/bash
-# Entrypoint script to fix volume permissions at container startup
+set -e
 
-echo "=== Fixing volume permissions ==="
+echo
+cat << "EOF"
+      __   __   ___   _      ___
+      \ \ / /  / _ \ | |    / _ \
+       \ V /  | | | || |   | | | |
+        | |   | |_| || |___| |_| |
+        |_|    \___/ |_____|\___/
 
-# Ensure directories exist and are writable
+      YOLO Flask Object Detection API
+EOF
+echo
+
+echo "Fixing volume permissions"
+
 mkdir -p /app/uploads /app/outputs /app/data
 chmod -R 777 /app/uploads /app/outputs /app/data
 
-echo "Permissions set:"
-ls -la /app/uploads /app/outputs /app/data
+echo
+echo "Current permissions"
+ls -la /app/uploads
+ls -la /app/outputs
+ls -la /app/data
 
-echo "=== Starting Flask application ==="
+echo
+echo "Starting Flask application"
+echo
+
 exec python app.py
