@@ -52,7 +52,7 @@ Accepts four video files representing the four lanes of an intersection.
 
 ### GET /health
 Checks the operational status of the system.
-- **Response:** 200 OK if all components (weights, binary) are present.
+- **Response:** 200 OK if all components (weights, binary) are present. Mainly is backend or server "Alive" or not.
 
 ### GET /stats
 Retrieves aggregated system performance metrics from the CSV logs.
@@ -66,4 +66,7 @@ The system uses YOLOv4 (You Only Look Once) to detect vehicles in video frames. 
 A C++ executable (`Algo`) receives vehicle counts and performs a genetic algorithm simulation. It evolves population parameters to minimize total vehicle wait time at the intersection. Mainly for to recude compile[interpreter] time. Here,we feed binary for "Algorithm" to cpu .
 
 ### Reinforcement Learning
-An optional RL agent refines the output of the genetic algorithm based on historical data and time-of-day patterns to ensure long-term adaptability.
+An optional RL agent refines the output of the genetic algorithm based on historical data and time-of-day patterns to ensure long-term adaptability. It is used to give chance to everyone so no starvation.
+
+###Note:
+Live cam inputs Algorithm works are going on.
