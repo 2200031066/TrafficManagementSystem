@@ -68,5 +68,5 @@ A C++ executable (`Algo`) receives vehicle counts and performs a genetic algorit
 ### Reinforcement Learning
 An optional RL agent refines the output of the genetic algorithm based on historical data and time-of-day patterns to ensure long-term adaptability. It is used to give chance to everyone so no starvation.
 
-###Note:
+### Note:
 Live cam inputs Algorithm works are going on.
