@@ -2,7 +2,17 @@
 
 set -euo pipefail
 
-BASE_URL="https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre"
+cat << "EOF"
+      __   __   ___   _      ___
+      \ \ / /  / _ \ | |    / _ \
+       \ V /  | | | || |   | | | |
+        | |   | |_| || |___| |_| |
+        |_|    \___/ |_____|\___/
+
+      YOLOv4 Weights and Config Downloader
+EOF
+
+URL="https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre"
 FILES=(
   "yolov4.cfg"
   "yolov4.weights"
@@ -17,7 +27,7 @@ download() {
     return
   fi
   echo "[download] $file"
-  curl -L -o "$file" "$BASE_URL/$file"
+  curl -L -o "$file" "$URL/$file"
 }
 
 main() {
