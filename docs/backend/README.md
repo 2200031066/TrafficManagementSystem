@@ -32,7 +32,7 @@ The backend is the core processing unit of the Traffic Management System. It orc
    ```
 3. Compile the C++ optimizer:
    ```bash
-   g++ -std=c++17 -O3 -fopenmp -o Algo1 Algo.cpp
+   g++ -std=c++17 -O3 -Wall -Wextra -DLOCAL -fopenmp -o Algo Algo.cpp
    ```
 4. Download YOLO weights:
    ```bash
@@ -63,7 +63,7 @@ Retrieves aggregated system performance metrics from the CSV logs.
 The system uses YOLOv4 (You Only Look Once) to detect vehicles in video frames. It processes frames in parallel to maximize throughput.
 
 ### Genetic Optimization
-A C++ executable (`Algo1`) receives vehicle counts and performs a genetic algorithm simulation. It evolves population parameters to minimize total vehicle wait time at the intersection.
+A C++ executable (`Algo`) receives vehicle counts and performs a genetic algorithm simulation. It evolves population parameters to minimize total vehicle wait time at the intersection. Mainly for to recude compile[interpreter] time. Here,we feed binary for "Algorithm" to cpu .
 
 ### Reinforcement Learning
 An optional RL agent refines the output of the genetic algorithm based on historical data and time-of-day patterns to ensure long-term adaptability.
