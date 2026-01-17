@@ -61,3 +61,4 @@ Environment variables are passed to containers via `.env` files located in the `
 - **Build Failures:** Ensure `make setup` has been run to download large weight files before building the Docker context.
 - **Port Conflicts:** Verify that ports 3000 and 5000 are not in use by other services.
 - **Permission Issues:** Ensure the user running Docker has write permissions to the `backend/data` directory for volume mounting.
+- **Files Issue:** Working on my machine (;-]), But not in docker(:-|).
