@@ -15,7 +15,7 @@ cat << "EOF"
  |  __/| |___|  _ <| |  | || | ___) |__) | | |_| | |\  |___) |
  |_|   |_____|_| \_\_|  |_|___|____/____/___\___/|_| \_|____/ 
                                                                
-===============================================================
+[===============================================================]
 EOF
 
 # Check what fix is needed
@@ -39,7 +39,7 @@ fix_upload_permissions() {
     
     # Try to restart container
     echo ""
-    echo "Restarting backend container..."
+    echo "[Restart]: Restarting backend container..."
     if command -v docker-compose &> /dev/null; then
         docker-compose restart backend 2>/dev/null && echo " [ OK ] Container restarted" || echo " [ !! ] Container not running or not found"
     elif command -v docker &> /dev/null; then
@@ -49,7 +49,7 @@ fix_upload_permissions() {
     # Wait and test
     sleep 3
     echo ""
-    echo "Testing write permissions in container..."
+    echo "[Waiting]: Testing write permissions in container..."
     if docker-compose exec -T backend touch /app/backend/uploads/.test 2>/dev/null; then
         echo " [ SUCCESS ] Uploads directory is writable!"
         docker-compose exec -T backend rm /app/backend/uploads/.test 2>/dev/null
@@ -99,4 +99,4 @@ case $CHOICE in
 esac
 
 echo ""
-echo "  Fix Complete!"
+echo "[Complete]: Fix Complete!"

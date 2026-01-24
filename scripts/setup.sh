@@ -41,70 +41,70 @@ cat << "EOF"
 EOF
 
 # STEP 1: Check Prerequisites
-print_step "Checking prerequisites..."
+print_step "[Wait]: Checking prerequisites..."
 
 MISSING_DEPS=0
 
 # Check Docker
 if command -v docker &> /dev/null; then
     DOCKER_VERSION=$(docker --version)
-    print_success "Docker installed: $DOCKER_VERSION"
+    print_success "[Done]: Docker installed: $DOCKER_VERSION"
 else
-    print_error "Docker is NOT installed"
+    print_error "[Error]: Docker is NOT installed"
     MISSING_DEPS=$((MISSING_DEPS + 1))
 fi
 
 # Check Docker Compose
 if command -v docker-compose &> /dev/null; then
     COMPOSE_VERSION=$(docker-compose --version)
-    print_success "Docker Compose installed: $COMPOSE_VERSION"
+    print_success "[OK]: Docker Compose installed: $COMPOSE_VERSION"
 else
-    print_error "Docker Compose is NOT installed"
+    print_error "[Error]: Docker Compose is NOT installed"
     MISSING_DEPS=$((MISSING_DEPS + 1))
 fi
 
 if [ $MISSING_DEPS -gt 0 ]; then
     echo ""
-    print_error "Missing required dependencies!"
-    echo "Please install Docker Desktop or Docker Engine."
+    print_error "[REQ]: Missing required dependencies!"
+    echo "[NEED]: Please install Docker Desktop or Docker Engine."
     exit 1
 fi
 
 # STEP 2: Download YOLO Weights
-print_step "Checking YOLO weights..."
+print_step "[HOLD]: Checking YOLO weights..."
 
 if [ -f "backend/yolov4-tiny.weights" ]; then
     SIZE=$(du -h backend/yolov4-tiny.weights | cut -f1)
-    print_success "YOLO weights already exist ($SIZE)"
+    print_success "[EXISTS]: YOLO weights already exist ($SIZE)"
 else
-    print_warning "YOLO weights not found. Downloading..."
+    print_warning "[404]: YOLO weights not found. Downloading..."
     cd backend
     
     if [ -f "download.sh" ]; then
         bash download.sh
     else
-        echo "Downloading YOLOv4-tiny weights (23MB)..."
+        echo "[Progress]: Downloading YOLOv4-tiny weights (23MB)..."
         wget -q --show-progress https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights
     fi
     
     cd ..
     
     if [ -f "backend/yolov4-tiny.weights" ]; then
-        print_success "YOLO weights downloaded successfully"
+        print_success "[Completed]: YOLO weights downloaded successfully"
     else
-        print_error "Failed to download YOLO weights"
+        print_error "[Error]: Failed to download YOLO weights"
         exit 1
     fi
 fi
 
 # STEP 3: Create Environment Files
-print_step "Setting up environment files..."
+print_step "[Wait]: Setting up environment files..."
 
 # Backend .env
 if [ ! -f "backend/.env" ]; then
     if [ -f "backend/.env.example" ]; then
         cp backend/.env.example backend/.env
-        print_success "Created backend/.env"
+        print_success "[OK]: Created backend/.env"
     else
         cat > backend/.env << 'ENVEOF'
 FLASK_ENV=production
@@ -113,7 +113,7 @@ PYTHONUNBUFFERED=1
 RATE_LIMIT_REQUESTS=10
 RATE_LIMIT_WINDOW=60
 ENVEOF
-        print_success "Created backend/.env with defaults"
+        print_success "[OK]: Created backend/.env with defaults"
     fi
 else
     print_success "backend/.env already exists"
@@ -123,28 +123,26 @@ fi
 if [ ! -f "frontend/.env" ]; then
     if [ -f "frontend/.env.example" ]; then
         cp frontend/.env.example frontend/.env
-        print_success "Created frontend/.env"
+        print_success "[Done]: Created frontend/.env"
     else
         cat > frontend/.env << 'ENVEOF'
 REACT_APP_API_URL=http://localhost:5000
 REACT_APP_ENVIRONMENT=production
 ENVEOF
-        print_success "Created frontend/.env with defaults"
+        print_success "[Done]: Created frontend/.env with defaults"
     fi
 else
-    print_success "frontend/.env already exists"
+    print_success "[Done]: frontend/.env already exists"
 fi
 
-# STEP 4: Create Required Directories
-print_step "Creating required directories..."
+print_step "[Wait]: Creating required directories..."
 
 mkdir -p backend/uploads
 mkdir -p backend/outputs
 mkdir -p backend/data
 
-print_success "Directories created: uploads, outputs, data"
+print_success "[OK]: Directories created: uploads, outputs, data"
 
-# STEP 5: Ask User for Deployment Mode
 print_step "Choose deployment mode..."
 
 echo ""
@@ -168,28 +166,26 @@ if [ "$MODE_CHOICE" = "1" ]; then
     print_step "Building Docker images (this may take 5-10 minutes)..."
     
     if [ "$DOCKER_MODE" = "2" ]; then
-        # Development mode
         docker-compose -f docker-compose.dev.yml build
-        print_success "Docker images built successfully (development mode)"
+        print_success "[Wait]: Docker images built successfully (development mode)"
         
-        print_step "Starting services in development mode..."
+        print_step "[Wait]: Starting services in development mode..."
         docker-compose -f docker-compose.dev.yml up -d
     else
-        # Production mode
         docker-compose build
-        print_success "Docker images built successfully (production mode)"
+        print_success "[Done]: Docker images built successfully (production mode)"
         
-        print_step "Starting services in production mode..."
+        print_step "[Wait]: Starting services in production mode..."
         docker-compose up -d
     fi
     
-    print_step "Waiting for services to be ready..."
+    print_step "[Hold]: Waiting for services to be ready..."
     sleep 10
     
-    print_step "Checking service status..."
+    print_step "[Hold]: Checking service status..."
     docker-compose ps
     
-    print_success "Docker containers are running!"
+    print_success "[...]: Docker containers are running!"
     
     echo ""
     echo "Service URLs:"
