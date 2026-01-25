@@ -34,7 +34,7 @@ main() {
   for f in "${FILES[@]}"; do
     download "$f"
   done
-  echo "YOLO files ready in $(pwd)"
+  echo "[Done]: YOLO files ready in $(pwd)"
 }
 
 main "$@"

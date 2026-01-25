@@ -8,6 +8,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
+# Function to display help message
+show_help() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Fixes permissions for Docker execution and backend upload directories."
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help message and exit"
+    echo ""
+}
+
+# Parse command line arguments
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+# Detect Docker Compose command
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+else
+    DOCKER_COMPOSE_CMD=""
+fi
+
 cat << "EOF"
   ____  _____ ____  __  __ ___ ____ ____ ___ ___  _   _ ____  
  |  _ \| ____|  _ \|  \/  |_ _/ ___/ ___|_ _/ _ \| \ | / ___| 
@@ -40,21 +66,27 @@ fix_upload_permissions() {
     # Try to restart container
     echo ""
     echo "[Restart]: Restarting backend container..."
-    if command -v docker-compose &> /dev/null; then
-        docker-compose restart backend 2>/dev/null && echo " [ OK ] Container restarted" || echo " [ !! ] Container not running or not found"
+    if [ -n "$DOCKER_COMPOSE_CMD" ]; then
+        $DOCKER_COMPOSE_CMD restart backend 2>/dev/null && echo " [ OK ] Container restarted" || echo " [ !! ] Container not running or not found"
     elif command -v docker &> /dev/null; then
         docker restart traffic-backend 2>/dev/null && echo " [ OK ] Container restarted" || echo " [ !! ] Container not running or not found"
+    else 
+         echo " [ WARN ] Docker command not found, skipping container restart."
     fi
     
     # Wait and test
     sleep 3
     echo ""
     echo "[Waiting]: Testing write permissions in container..."
-    if docker-compose exec -T backend touch /app/backend/uploads/.test 2>/dev/null; then
-        echo " [ SUCCESS ] Uploads directory is writable!"
-        docker-compose exec -T backend rm /app/backend/uploads/.test 2>/dev/null
+    if [ -n "$DOCKER_COMPOSE_CMD" ]; then
+        if $DOCKER_COMPOSE_CMD exec -T backend touch /app/backend/uploads/.test 2>/dev/null; then
+            echo " [ SUCCESS ] Uploads directory is writable!"
+            $DOCKER_COMPOSE_CMD exec -T backend rm /app/backend/uploads/.test 2>/dev/null
+        else
+            echo " [ FAILURE ] Container not running or test failed"
+        fi
     else
-        echo " [ FAILURE ] Container not running or test failed"
+         echo " [ SKIP ] Cannot test container permissions (docker-compose not found)."
     fi
 }
 

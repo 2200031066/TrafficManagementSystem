@@ -10,6 +10,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
+# Function to display help message
+show_help() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Validates project structure, dependencies, and configuration."
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help message and exit"
+    echo ""
+}
+
+# Parse command line arguments
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+# Detect Docker Compose command
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+else
+    DOCKER_COMPOSE_CMD=""
+fi
+
 cat << "EOF"
  __     ___    _     ___ ____    _  _____ ___ ___  _   _ 
  \ \   / / \  | |   |_ _|  _ \  / \|_   _|_ _/ _ \| \ | |
@@ -32,7 +58,7 @@ else
 fi
 
 # Check if Docker Compose is installed
-if command -v docker-compose &> /dev/null; then
+if [ -n "$DOCKER_COMPOSE_CMD" ]; then
     echo " [ OK ] Docker Compose is installed"
 else
     echo " [ FAIL ] Docker Compose is not installed"
@@ -128,18 +154,22 @@ echo ""
 echo ">>> Testing Docker Compose configuration..."
 
 # Validate docker-compose files
-if docker-compose config > /dev/null 2>&1; then
-    echo " [ OK ] docker-compose.yml is valid"
-else
-    echo " [ FAIL ] docker-compose.yml has errors"
-    ERRORS=$((ERRORS + 1))
-fi
+if [ -n "$DOCKER_COMPOSE_CMD" ]; then
+    if $DOCKER_COMPOSE_CMD config > /dev/null 2>&1; then
+        echo " [ OK ] docker-compose.yml is valid"
+    else
+        echo " [ FAIL ] docker-compose.yml has errors"
+        ERRORS=$((ERRORS + 1))
+    fi
 
-if docker-compose -f docker-compose.dev.yml config > /dev/null 2>&1; then
-    echo " [ OK ] docker-compose.dev.yml is valid"
+    if $DOCKER_COMPOSE_CMD -f docker-compose.dev.yml config > /dev/null 2>&1; then
+        echo " [ OK ] docker-compose.dev.yml is valid"
+    else
+        echo " [ FAIL ] docker-compose.dev.yml has errors"
+        ERRORS=$((ERRORS + 1))
+    fi
 else
-    echo " [ FAIL ] docker-compose.dev.yml has errors"
-    ERRORS=$((ERRORS + 1))
+    echo " [ SKIP ] Cannot validate docker-compose configuration (docker-compose not found)"
 fi
 
 echo ""

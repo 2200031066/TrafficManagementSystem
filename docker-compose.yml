@@ -10,7 +10,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # Persist uploads and outputs
+      # uploads and outputs
       - ./backend/uploads:/app/uploads
       - ./backend/outputs:/app/outputs
       - ./backend/data:/app/data

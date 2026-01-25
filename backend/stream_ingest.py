@@ -104,7 +104,7 @@ def main():
     camera_sources = args.camera
     payload, errors = run_live_optimization(camera_sources, verbose=args.verbose)
 
-    print("\n=== Live Optimization Result ===")
+    print("\n Live Optimization Result")
     print(payload)
     if any(errors):
         print("\nErrors:", errors)

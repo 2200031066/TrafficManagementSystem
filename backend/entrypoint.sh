@@ -13,7 +13,7 @@ cat << "EOF"
 EOF
 echo
 
-echo "Fixing volume permissions"
+echo "[FIX]: Fixing volume permissions"
 
 mkdir -p /app/uploads /app/outputs /app/data
 chmod -R 777 /app/uploads /app/outputs /app/data
@@ -25,7 +25,7 @@ ls -la /app/outputs
 ls -la /app/data
 
 echo
-echo "Starting Flask application"
+echo "[HOLD THE DOOR]: Starting Flask application"
 echo
 
 exec python app.py

@@ -10,6 +10,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
+# Function to display help message
+show_help() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Sets up and runs the AI Traffic Management System."
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help message and exit"
+    echo ""
+}
+
+# Parse command line arguments
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+# Detect Docker Compose command
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+else
+    DOCKER_COMPOSE_CMD=""
+fi
+
 # Output helpers
 print_step() {
     echo -e "\n>>> $1"
@@ -55,8 +81,8 @@ else
 fi
 
 # Check Docker Compose
-if command -v docker-compose &> /dev/null; then
-    COMPOSE_VERSION=$(docker-compose --version)
+if [ -n "$DOCKER_COMPOSE_CMD" ]; then
+    COMPOSE_VERSION=$($DOCKER_COMPOSE_CMD version)
     print_success "[OK]: Docker Compose installed: $COMPOSE_VERSION"
 else
     print_error "[Error]: Docker Compose is NOT installed"
@@ -84,7 +110,14 @@ else
         bash download.sh
     else
         echo "[Progress]: Downloading YOLOv4-tiny weights (23MB)..."
-        wget -q --show-progress https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights
+        if command -v wget &> /dev/null; then
+             wget -q --show-progress https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights
+        elif command -v curl &> /dev/null; then
+             curl -L -o yolov4-tiny.weights https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights
+        else
+             print_error "Neither wget nor curl found. Please install one of them to download weights."
+             exit 1
+        fi
     fi
     
     cd ..
@@ -166,24 +199,24 @@ if [ "$MODE_CHOICE" = "1" ]; then
     print_step "Building Docker images (this may take 5-10 minutes)..."
     
     if [ "$DOCKER_MODE" = "2" ]; then
-        docker-compose -f docker-compose.dev.yml build
+        $DOCKER_COMPOSE_CMD -f docker-compose.dev.yml build
         print_success "[Wait]: Docker images built successfully (development mode)"
         
         print_step "[Wait]: Starting services in development mode..."
-        docker-compose -f docker-compose.dev.yml up -d
+        $DOCKER_COMPOSE_CMD -f docker-compose.dev.yml up -d
     else
-        docker-compose build
+        $DOCKER_COMPOSE_CMD build
         print_success "[Done]: Docker images built successfully (production mode)"
         
         print_step "[Wait]: Starting services in production mode..."
-        docker-compose up -d
+        $DOCKER_COMPOSE_CMD up -d
     fi
     
     print_step "[Hold]: Waiting for services to be ready..."
     sleep 10
     
     print_step "[Hold]: Checking service status..."
-    docker-compose ps
+    $DOCKER_COMPOSE_CMD ps
     
     print_success "[...]: Docker containers are running!"
     
@@ -257,15 +290,15 @@ elif [ "$MODE_CHOICE" = "2" ]; then
     # Setup Frontend
     print_step "Setting up Frontend..."
     cd frontend
-    print_step "Installing Node.js dependencies..."
+    print_step "[On]: Installing Node.js dependencies..."
     npm install
     print_success "Node.js dependencies installed"
     cd ..
     
     # Start Services
-    print_step "Starting services..."
+    print_step "[HERE]: Starting services..."
     
-    print_step "Starting backend server..."
+    print_step "[Begin]: Starting backend server..."
     cd backend
     nohup python3 app.py > ../backend.log 2>&1 &
     BACKEND_PID=$!
@@ -275,7 +308,7 @@ elif [ "$MODE_CHOICE" = "2" ]; then
     
     sleep 5
     
-    print_step "Starting frontend server..."
+    print_step "[Begin]: Starting frontend server..."
     cd frontend
     nohup npm start > ../frontend.log 2>&1 &
     FRONTEND_PID=$!
@@ -283,16 +316,16 @@ elif [ "$MODE_CHOICE" = "2" ]; then
     cd ..
     print_success "Frontend started (PID: $FRONTEND_PID)"
     
-    print_step "Waiting for services to be ready (30 seconds)..."
+    print_step "[Hold Tight]: Waiting for services to be ready (30 seconds)..."
     sleep 30
     
-    print_success "Services are starting up!"
+    print_success "[Done]: Services are starting up!"
     echo ""
     echo "Service URLs:"
     echo "   Frontend:  http://localhost:3000"
     echo "   Backend:   http://localhost:5000"
 else
-    print_error "Invalid choice!"
+    print_error "[Check Once]: Invalid choice!"
     exit 1
 fi
 
@@ -312,5 +345,5 @@ echo " Documentation:"
 echo "  • docs/docker/README.md - Detailed Docker documentation"
 echo "  • README.md - Project overview"
 echo ""
-print_success "Ready to optimize traffic! "
+print_success "[COMPLETE]: Ready to optimize traffic! "
 echo ""

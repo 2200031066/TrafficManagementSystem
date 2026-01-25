@@ -19,7 +19,6 @@ class TrafficRLAgent:
             'evening': {'start': 17, 'end': 20, 'boost': 1.4},  # 5 PM - 8 PM
         }
         
-        # Direction patterns during rush hours (adjust for your intersection)
         # Format: [N, S, W, E] - higher = more priority
         self.rush_patterns = {
             'morning': np.array([1.2, 1.0, 1.3, 1.1]),  # Morning: West/North heavy (incoming)
