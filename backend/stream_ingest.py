@@ -52,19 +52,34 @@ def detect_single_stream(source: str, model, class_names, warmup_frames: int = 5
         return 0, f"Detection failed for {source}: {e}"
 
 
+import concurrent.futures
+
 def detect_cameras(camera_sources: List[str]) -> Tuple[List[int], List[str]]:
-    """Detect vehicles on a list of camera sources sequentially."""
+    """Detect vehicles on a list of camera sources in parallel."""
     model, class_names = create_model()
-    counts = []
-    errors = []
+    
+    # Pre-allocate results to maintain order
+    results = [0] * len(camera_sources)
+    errors = [""] * len(camera_sources)
 
-    for idx, src in enumerate(camera_sources):
-        count, err = detect_single_stream(src, model, class_names)
-        counts.append(count)
-        errors.append(err)
-        print(f"[Stream] Cam {idx}: count={count} err={err}")
+    def _process_single_camera(idx, src):
+        # Note: Model is shared, but detection inside detect_single_stream 
+        # calls _count_frame which calls model.detect. 
+        # OpenCV DNN inference is generally thread-safe, but capturing is the bottleneck.
+        cnt, err = detect_single_stream(src, model, class_names)
+        return idx, cnt, err
 
-    return counts, errors
+    # Use ThreadPoolExecutor for I/O bound camera capture
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(camera_sources)) as executor:
+        futures = [executor.submit(_process_single_camera, i, src) for i, src in enumerate(camera_sources)]
+        
+        for future in concurrent.futures.as_completed(futures):
+            idx, count, err = future.result()
+            results[idx] = count
+            errors[idx] = err
+            print(f"[Stream] Cam {idx}: count={count} err={err}")
+
+    return results, errors
 
 
 def run_live_optimization(camera_sources: List[str], verbose: bool = True):

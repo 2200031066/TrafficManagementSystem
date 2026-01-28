@@ -236,11 +236,19 @@ genetic_algorithm(int pop_size, int num_lights, int max_iter, int green_min,
     }
 
     population = std::move(next_gen);
-    sort(population.begin(), population.end(),
+    
+    // Optimization: Instead of full sort (O(N log N)), just find the best for elitism (O(N))
+    auto best_it = std::min_element(population.begin(), population.end(),
          [](const population_element &a, const population_element &b) {
            return a.second < b.second;
          });
 
+    // Swap best to front so it's preserved by elitism in next iter
+    if (best_it != population.begin()) {
+        std::iter_swap(population.begin(), best_it);
+    }
+    
+    // Update global best if needed
     if (population.front().second < best_sol.second) {
       best_sol = population.front();
       no_improvement_count = 0;
