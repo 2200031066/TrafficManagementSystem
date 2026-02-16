@@ -33,10 +33,10 @@ The AI Traffic Management System is an end-to-end solution designed to reduce ur
 
 | Layer | Technologies |
 |:---|:---|
-| **Frontend** | React, Material UI, Axios |
-| **Backend API** | Flask (Python 3.10), Gunicorn |
+| **Frontend** | React |
+| **Backend API** | Flask (Python 3.10) |
 | **Vision Processing** | OpenCV, Darknet (YOLOv4) |
-| **Optimization Core** | C++17, OpenMP |
+| **Optimization Core** | C++17, OpenMP [FOR parallel..] |
 | **Infrastructure** | Docker, Docker Compose, Nginx |
 
 ---
