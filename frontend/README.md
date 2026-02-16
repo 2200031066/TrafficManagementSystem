@@ -1,32 +1,50 @@
 # Getting Started
 
-This project was created using Create React App.
+This frontend application was bootstrapped using **Create React App**.
+
+---
 
 ## Available Scripts
 
-In the project directory, you can run:
+Inside the project directory, you can run:
+
+---
 
 ### `npm start`
 
-Runs the app in development mode.  
-Open http://localhost:3000 in your browser.
+Starts the development server.
 
-The page reloads automatically when changes are made.
+- Runs the app in development mode  
+- Open: http://localhost:3000  
+- Automatically reloads when you save changes  
+- Displays lint errors in the console  
+
+---
 
 ### `npm test`
 
-Runs the test suite in watch mode.
+Launches the test runner in interactive watch mode.
+
+- Runs unit tests
+- Re-runs tests when files change
+
+---
 
 ### `npm run build`
 
-Builds the app for production into the `build` directory.
+Creates a production-ready build.
 
-The build is optimized and minified for best performance.  
-Generated files include hashed filenames.
+- Output directory: `build/`
+- Optimized and minified files
+- Includes hashed filenames for caching
+- Ready for deployment
+
+---
 
 ### `npm run eject`
 
-Removes the default build configuration and exposes all underlying config files.
+Exposes all hidden configuration files (Webpack, Babel, ESLint, etc.)
 
-This action is irreversible.  
-Use only if you need full control over the build setup.
+- This action **cannot be undone**
+- Only use if you need full control over the build configuration
+- Not recommended for most projects
