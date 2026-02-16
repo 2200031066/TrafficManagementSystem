@@ -43,10 +43,13 @@ The AI Traffic Management System is an end-to-end solution designed to reduce ur
 
 ## Installation and Setup
 
-### Prerequisites
-- Docker Engine 20.10 or higher
-- Docker Compose 2.0 or higher
-- Minimum 8GB RAM recommended for AI model inference
+> [!IMPORTANT]
+> **Prerequisites**
+> Make sure your system has
+> - Docker Engine 20.10 or higher  
+> - Docker Compose 2.0 or higher  
+> - Minimum 8GB RAM recommended for AI model inference
+
 
 ### Automated Setup (Recommended)
 The project includes a Makefile to automate common deployment tasks. For detailed information regarding containerization and orchestration, please refer to the [Docker Documentation](docs/docker/README.md).
