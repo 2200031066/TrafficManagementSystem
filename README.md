@@ -36,7 +36,7 @@ The AI Traffic Management System is an end-to-end solution designed to reduce ur
 | **Frontend** | React |
 | **Backend API** | Flask (Python 3.10) |
 | **Vision Processing** | OpenCV, Darknet (YOLOv4) |
-| **Optimization Core** | C++17, OpenMP [FOR parallel..] |
+| **Optimization Core** | C++17, OpenMP [parallel..] |
 | **Infrastructure** | Docker, Docker Compose, Nginx |
 
 ---
@@ -46,14 +46,14 @@ The AI Traffic Management System is an end-to-end solution designed to reduce ur
 ### Prerequisites
 - Docker Engine 20.10 or higher
 - Docker Compose 2.0 or higher
-- Minimum 4GB RAM recommended for AI model inference
+- Minimum 8GB RAM recommended for AI model inference
 
 ### Automated Setup (Recommended)
 The project includes a Makefile to automate common deployment tasks. For detailed information regarding containerization and orchestration, please refer to the [Docker Documentation](docs/docker/README.md).
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/udaykiriti/TrafficManagementSystem.git
+   git clone https://github.com/udaykiriti/TrafficManagementSystem
    cd TrafficManagementSystem
    ```
 
@@ -114,8 +114,8 @@ For environments where Docker is not available, follow these steps:
 ## Contributing
 
 1. Fork the project.
-2. Create a feature branch (`git checkout -b feature/OptimizationUpdate`).
-3. Commit your changes (`git commit -m 'Improve GA convergence speed'`).
+2. Create a feature branch (`git checkout -b <feature/OptimizationUpdate>`).
+3. Commit your changes (`git commit -m "Improve GA convergence speed"`).
 4. Push to the branch (`git push origin feature/OptimizationUpdate`).
 5. Open a Pull Request.
 
@@ -123,6 +123,6 @@ For environments where Docker is not available, follow these steps:
 
 ## Acknowledgments
 
-- **AlexeyAB/darknet:** For the YOLOv4 implementation.
+- **AlexeyAB/darknet:** For the YOLOv4 implementation[not done yet.].
 - **OpenCV Team:** For the vision processing libraries.
 - **Genetic Algorithm:** Core logic based on standard evolutionary strategy principles.
