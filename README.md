@@ -71,12 +71,24 @@ The project includes a Makefile to automate common deployment tasks. For detaile
    make up
    ```
 
-The application will be accessible at:
-- **Web Dashboard:** http://localhost:3000
-- **Backend API:** http://localhost:5000
-- **API Health Check:** http://localhost:5000/health
+## Application Access
+
+> **Web Dashboard**  
+> http://localhost:3000  
+> User interface for monitoring and control.
 
 ---
+
+> **Backend API**  
+> http://localhost:5000  
+> REST API endpoints.
+
+---
+
+> **API Health Check**  
+> http://localhost:5000/health  
+> Verify backend service status.
+
 
 ## Docker Deployment
 
