@@ -10,7 +10,7 @@ CLASS_FILE = os.path.join(BASE_DIR, 'classes.txt')
 CONFIG_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.cfg')
 WEIGHTS_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.weights')
 
-CONF_THRESHOLD = 0.35
+CONF_THRESHOLD = 0.5
 NMS_THRESHOLD = 0.65
 INPUT_SIZE = 320
 MIN_BOX_AREA = 600  # Filter out tiny detections (minimum 20x30 vehicle)
