@@ -13,7 +13,13 @@ WEIGHTS_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.weights')
 CONF_THRESHOLD = 0.35
 NMS_THRESHOLD = 0.5
 INPUT_SIZE = 320
-MIN_BOX_AREA = 400  # Filter out tiny detections 
+MIN_BOX_AREA = 400  # Filter out tiny detections
+
+# <!--- Region of Interest (ROI) - focus on traffic lanes --->
+ROI_TOP = 0.2      # Skip top 20% (sky)
+ROI_BOTTOM = 1.0   # Use full bottom (road)
+ROI_LEFT = 0.0     # Use full left
+ROI_RIGHT = 1.0    # Use full right 
 VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
 
 COLORS = {
@@ -65,6 +71,16 @@ def create_model():
     return model, class_names
 
 
+def extract_roi(frame):
+    """Extract Region of Interest from frame to focus on traffic lanes."""
+    h, w = frame.shape[:2]
+    y1 = int(h * ROI_TOP)
+    y2 = int(h * ROI_BOTTOM)
+    x1 = int(w * ROI_LEFT)
+    x2 = int(w * ROI_RIGHT)
+    return frame[y1:y2, x1:x2], (x1, y1, x2, y2)
+
+
 def process_video(input_path, output_path):
     """Process video and create output with detections."""
     
@@ -102,8 +118,11 @@ def process_video(input_path, output_path):
         
         frame_count += 1
         
-        # Resize frame for faster processing
-        frame_resized = cv.resize(frame, (INPUT_SIZE, INPUT_SIZE))
+        # Extract ROI to focus on traffic lanes
+        frame_roi, roi_coords = extract_roi(frame)
+        
+        # Resize ROI for faster processing
+        frame_resized = cv.resize(frame_roi, (INPUT_SIZE, INPUT_SIZE))
         
         # Detect objects
         classes, scores, boxes = model.detect(frame_resized, CONF_THRESHOLD, NMS_THRESHOLD)

@@ -37,6 +37,12 @@ MAX_PARALLEL_WORKERS = min(3, max(1, mp.cpu_count() - 1))     # Limit to prevent
 VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
 MIN_BOX_AREA = 400  # Filter out tiny detections (20x20 px = likely false positives)
 
+# <!--- Region of Interest (ROI) - focus on traffic lanes, skip sky/borders --->
+ROI_TOP = 0.2      # Skip top 20% (sky)
+ROI_BOTTOM = 1.0   # Use full bottom (road)
+ROI_LEFT = 0.0     # Use full left
+ROI_RIGHT = 1.0    # Use full right
+
 
 def get_optimal_backend():
     """Auto-detect best backend (CUDA > OpenCL > CPU)"""
@@ -54,6 +60,30 @@ def get_optimal_backend():
         pass
     print("[YOLO] Using CPU backend", flush=True)
     return cv.dnn.DNN_BACKEND_DEFAULT, cv.dnn.DNN_TARGET_CPU
+
+def extract_roi(frame):
+    """Extract Region of Interest from frame to focus on traffic lanes."""
+    h, w = frame.shape[:2]
+    y1 = int(h * ROI_TOP)
+    y2 = int(h * ROI_BOTTOM)
+    x1 = int(w * ROI_LEFT)
+    x2 = int(w * ROI_RIGHT)
+    return frame[y1:y2, x1:x2], (x1, y1, x2, y2)
+
+def filter_roi_detections(classes, boxes, roi_coords):
+    """Filter detections to only those within ROI."""
+    x1, y1, x2, y2 = roi_coords
+    filtered_classes = []
+    filtered_boxes = []
+    
+    for cls, box in zip(classes, boxes):
+        bx, by, bw, bh = box
+        # Check if detection is within ROI
+        if bx >= x1 and by >= y1 and (bx + bw) <= x2 and (by + bh) <= y2:
+            filtered_classes.append(cls)
+            filtered_boxes.append(box)
+    
+    return filtered_classes, filtered_boxes
 
 def create_model():
     """Create a new model instance (for use in subprocess)."""
@@ -122,9 +152,11 @@ def _detect_cars_worker(video_file, result_queue, worker_id):
             
             # <!--- Skip frames for speed --->
             if frame_idx % (SKIP_FRAMES + 1) == 0:
-                # <!--- Resize frame for faster processing --->
-                frame_resized = cv.resize(frame, (INPUT_SIZE, INPUT_SIZE))
-                # <!--- Detect vehicles in frame (all types: car, truck, bus, motorbike, bicycle) --->
+                # <!--- Extract ROI to focus on traffic lanes --->
+                frame_roi, roi_coords = extract_roi(frame)
+                # <!--- Resize ROI for faster processing --->
+                frame_resized = cv.resize(frame_roi, (INPUT_SIZE, INPUT_SIZE))
+                # <!--- Detect vehicles in ROI --->
                 classes, scores, boxes = model.detect(frame_resized, CONF_THRESHOLD, NMS_THRESHOLD)
                 # <!--- Filter detections: only count vehicles with sufficient size --->
                 vehicle_count = 0
