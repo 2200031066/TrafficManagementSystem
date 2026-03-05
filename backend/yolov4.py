@@ -38,7 +38,7 @@ VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
 MIN_BOX_AREA = 600  # Filter out tiny detections (minimum 20x30 vehicle)
 
 # <!--- Region of Interest (ROI) - focus on traffic lanes, skip sky/borders --->
-ROI_TOP = 0.2      # Skip top 20% (sky)
+ROI_TOP = 0.15     # Skip top 15% (sky)
 ROI_BOTTOM = 1.0   # Use full bottom (road)
 ROI_LEFT = 0.0     # Use full left
 ROI_RIGHT = 1.0    # Use full right
