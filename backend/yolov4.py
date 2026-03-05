@@ -35,7 +35,7 @@ MAX_PARALLEL_WORKERS = min(3, max(1, mp.cpu_count() - 1))     # Limit to prevent
 
 # <!--- Target classes (COCO) ---->
 VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
-MIN_BOX_AREA = 400  # Filter out tiny detections (20x20 px = likely false positives)
+MIN_BOX_AREA = 600  # Filter out tiny detections (minimum 20x30 vehicle)
 
 # <!--- Region of Interest (ROI) - focus on traffic lanes, skip sky/borders --->
 ROI_TOP = 0.2      # Skip top 20% (sky)
