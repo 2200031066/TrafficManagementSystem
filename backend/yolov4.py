@@ -28,7 +28,7 @@ cv.ocl.setUseOpenCL(True)
 # <!--- Model configuration ---->
 MODEL_TYPE = 'tiny'          # 'full' (YOLOv4) or 'tiny' (YOLOv4-tiny) - tiny is faster
 CONF_THRESHOLD = 0.35        # Detection confidence threshold - increased for better accuracy
-NMS_THRESHOLD = 0.5          # Non-maximum suppression threshold - increased to reduce duplicates
+NMS_THRESHOLD = 0.65          # Non-maximum suppression threshold - increased for better deduplication
 INPUT_SIZE = 320             # Input resolution (lower = faster, higher = more accurate)
 SKIP_FRAMES = 3              # Process 1 frame every (SKIP_FRAMES + 1) - improved accuracy
 MAX_PARALLEL_WORKERS = min(3, max(1, mp.cpu_count() - 1))     # Limit to prevent memory exhaustion
