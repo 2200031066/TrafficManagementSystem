@@ -10,9 +10,9 @@ CLASS_FILE = os.path.join(BASE_DIR, 'classes.txt')
 CONFIG_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.cfg')
 WEIGHTS_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.weights')
 
-CONF_THRESHOLD = 0.2
-NMS_THRESHOLD = 0.4
-INPUT_SIZE = 608 
+CONF_THRESHOLD = 0.35
+NMS_THRESHOLD = 0.5
+INPUT_SIZE = 416 
 VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
 
 COLORS = {
@@ -33,7 +33,7 @@ def create_model():
     
     net = cv.dnn.readNet(WEIGHTS_FILE, CONFIG_FILE)
     
-    # Try CUDA, fallback to CPU
+    # Try CUDA > OpenCL > CPU
     try:
         if cv.cuda.getCudaEnabledDeviceCount() > 0:
             net.setPreferableBackend(cv.dnn.DNN_BACKEND_CUDA)
@@ -42,9 +42,18 @@ def create_model():
         else:
             raise Exception("No CUDA")
     except:
+        try:
+            if cv.ocl.haveOpenCL():
+                cv.ocl.setUseOpenCL(True)
+                print("[YOLO] Using OpenCL GPU acceleration")
+            else:
+                cv.setNumThreads(4)
+                print("[YOLO] Using CPU backend (4 threads)")
+        except:
+            cv.setNumThreads(4)
+            print("[YOLO] Using CPU backend")
         net.setPreferableBackend(cv.dnn.DNN_BACKEND_DEFAULT)
         net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
-        print("[YOLO] Using CPU backend")
     
     model = cv.dnn_DetectionModel(net)
     model.setInputParams(size=(INPUT_SIZE, INPUT_SIZE), scale=1/255, swapRB=True)
@@ -92,8 +101,11 @@ def process_video(input_path, output_path):
         
         frame_count += 1
         
+        # Resize frame for faster processing
+        frame_resized = cv.resize(frame, (INPUT_SIZE, INPUT_SIZE))
+        
         # Detect objects
-        classes, scores, boxes = model.detect(frame, CONF_THRESHOLD, NMS_THRESHOLD)
+        classes, scores, boxes = model.detect(frame_resized, CONF_THRESHOLD, NMS_THRESHOLD)
         
         # Count and draw vehicles
         vehicle_count = 0

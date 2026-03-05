@@ -22,16 +22,16 @@ TINY_CFG_FILE = CONFIG_FILE
 TINY_WEIGHTS_FILE = WEIGHTS_FILE
 
 # <!--- Performance tuning ---->
-cv.setNumThreads(1)
-cv.ocl.setUseOpenCL(False)
+cv.setNumThreads(4)
+cv.ocl.setUseOpenCL(True)
 
 # <!--- Model configuration ---->
-MODEL_TYPE = 'full'          # 'full' (YOLOv4) or 'tiny' (YOLOv4-tiny)
-CONF_THRESHOLD = 0.2         # Detection confidence threshold
-NMS_THRESHOLD = 0.4          # Non-maximum suppression threshold
+MODEL_TYPE = 'tiny'          # 'full' (YOLOv4) or 'tiny' (YOLOv4-tiny) - tiny is faster
+CONF_THRESHOLD = 0.35        # Detection confidence threshold - increased for better accuracy
+NMS_THRESHOLD = 0.5          # Non-maximum suppression threshold - increased to reduce duplicates
 INPUT_SIZE = 416             # Input resolution (lower = faster, higher = more accurate)
-SKIP_FRAMES = 5              # Process 1 frame every (SKIP_FRAMES + 1)
-MAX_PARALLEL_WORKERS = max(4, mp.cpu_count())     # Max concurrent processes (default to at least 4 for 4 lanes)
+SKIP_FRAMES = 3              # Process 1 frame every (SKIP_FRAMES + 1) - improved accuracy
+MAX_PARALLEL_WORKERS = min(3, max(1, mp.cpu_count() - 1))     # Limit to prevent memory exhaustion
 
 # <!--- Target classes (COCO) ---->
 VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
@@ -43,6 +43,12 @@ def get_optimal_backend():
         if cv.cuda.getCudaEnabledDeviceCount() > 0:
             print("[YOLO] CUDA detected - using GPU acceleration", flush=True)
             return cv.dnn.DNN_BACKEND_CUDA, cv.dnn.DNN_TARGET_CUDA
+    except:
+        pass
+    try:
+        if cv.ocl.haveOpenCL():
+            print("[YOLO] OpenCL detected - using GPU acceleration", flush=True)
+            return cv.dnn.DNN_BACKEND_DEFAULT, cv.dnn.DNN_TARGET_CPU
     except:
         pass
     print("[YOLO] Using CPU backend", flush=True)
@@ -115,8 +121,10 @@ def _detect_cars_worker(video_file, result_queue, worker_id):
             
             # <!--- Skip frames for speed --->
             if frame_idx % (SKIP_FRAMES + 1) == 0:
+                # <!--- Resize frame for faster processing --->
+                frame_resized = cv.resize(frame, (INPUT_SIZE, INPUT_SIZE))
                 # <!--- Detect vehicles in frame (all types: car, truck, bus, motorbike, bicycle) --->
-                classes, scores, boxes = model.detect(frame, CONF_THRESHOLD, NMS_THRESHOLD)
+                classes, scores, boxes = model.detect(frame_resized, CONF_THRESHOLD, NMS_THRESHOLD)
                 vehicle_count = sum(1 for cid in classes if class_names[cid] in VEHICLE_CLASSES)
                 car_counts.append(vehicle_count)
                 processed_count += 1
