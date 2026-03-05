@@ -27,11 +27,20 @@ cv.ocl.setUseOpenCL(True)
 
 # <!--- Model configuration ---->
 MODEL_TYPE = 'tiny'          # 'full' (YOLOv4) or 'tiny' (YOLOv4-tiny) - tiny is faster
-CONF_THRESHOLD = 0.5         # Detection confidence threshold - increased for fewer false positives
-NMS_THRESHOLD = 0.65          # Non-maximum suppression threshold - increased for better deduplication
+CONF_THRESHOLD = 0.4         # Lower for catching more bikes in crowds
+NMS_THRESHOLD = 0.45         # Lower to allow overlapping bikes
 INPUT_SIZE = 416             # Input resolution - better accuracy with acceptable speed trade-off
 SKIP_FRAMES = 3              # Process 1 frame every (SKIP_FRAMES + 1) - improved accuracy
 MAX_PARALLEL_WORKERS = min(3, max(1, mp.cpu_count() - 1))     # Limit to prevent memory exhaustion
+
+# Per-class thresholds for fine-tuned detection
+PER_CLASS_CONF = {
+    'car': 0.5,              # Strict for cars (avoid false positives)
+    'truck': 0.5,            # Strict for trucks
+    'bus': 0.5,              # Strict for buses
+    'motorbike': 0.35,       # Loose for bikes (catch all in crowds)
+    'bicycle': 0.4           # Loose for bicycles
+}
 
 # <!--- Target classes (COCO) ---->
 VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
@@ -169,9 +178,14 @@ def _detect_cars_worker(video_file, result_queue, worker_id):
                 classes, scores, boxes = model.detect(frame_resized, CONF_THRESHOLD, NMS_THRESHOLD)
                 # <!--- Filter detections: only count vehicles with sufficient size --->
                 vehicle_count = 0
-                for cid, box in zip(classes, boxes):
+                for cid, score, box in zip(classes, scores, boxes):
                     class_name = class_names[cid]
                     if class_name in VEHICLE_CLASSES:
+                        # Apply per-class confidence threshold
+                        class_conf_threshold = PER_CLASS_CONF.get(class_name, CONF_THRESHOLD)
+                        if score < class_conf_threshold:
+                            continue
+                        
                         x, y, w, h = box
                         # Use per-class minimum area
                         min_area = MIN_BOX_AREA.get(class_name, MIN_BOX_AREA_DEFAULT)

@@ -10,9 +10,17 @@ CLASS_FILE = os.path.join(BASE_DIR, 'classes.txt')
 CONFIG_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.cfg')
 WEIGHTS_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.weights')
 
-CONF_THRESHOLD = 0.5
-NMS_THRESHOLD = 0.65
-INPUT_SIZE = 416
+CONF_THRESHOLD = 0.4         # Lower for catching more bikes in crowds
+NMS_THRESHOLD = 0.45         # Lower to allow overlapping bikes
+
+# Per-class thresholds for fine-tuned detection
+PER_CLASS_CONF = {
+    'car': 0.5,              # Strict for cars (avoid false positives)
+    'truck': 0.5,            # Strict for trucks
+    'bus': 0.5,              # Strict for buses
+    'motorbike': 0.35,       # Loose for bikes (catch all in crowds)
+    'bicycle': 0.4           # Loose for bicycles
+}
 
 # Per-class minimum box area (motorcycles are smaller than cars)
 MIN_BOX_AREA_DEFAULT = 600
@@ -148,6 +156,11 @@ def process_video(input_path, output_path):
         for classid, score, box in zip(classes, scores, boxes):
             class_name = class_names[classid]
             if class_name in VEHICLE_CLASSES:
+                # Apply per-class confidence threshold
+                class_conf_threshold = PER_CLASS_CONF.get(class_name, CONF_THRESHOLD)
+                if score < class_conf_threshold:
+                    continue
+                
                 x, y, w, h = box
                 # Filter out tiny detections using per-class minimum area
                 min_area = MIN_BOX_AREA.get(class_name, MIN_BOX_AREA_DEFAULT)
