@@ -12,6 +12,7 @@ WEIGHTS_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.weights')
 
 CONF_THRESHOLD = 0.4         # Lower for catching more bikes in crowds
 NMS_THRESHOLD = 0.45         # Lower to allow overlapping bikes
+INPUT_SIZE = 416
 
 # Per-class thresholds for fine-tuned detection
 PER_CLASS_CONF = {
