@@ -35,7 +35,16 @@ MAX_PARALLEL_WORKERS = min(3, max(1, mp.cpu_count() - 1))     # Limit to prevent
 
 # <!--- Target classes (COCO) ---->
 VEHICLE_CLASSES = {'car', 'motorbike', 'bus', 'truck', 'bicycle'}
-MIN_BOX_AREA = 600  # Filter out tiny detections (minimum 20x30 vehicle)
+
+# Per-class minimum box area (motorcycles are smaller than cars)
+MIN_BOX_AREA_DEFAULT = 600
+MIN_BOX_AREA = {
+    'car': 600,
+    'truck': 800,
+    'bus': 800,
+    'motorbike': 300,      # Much smaller than cars
+    'bicycle': 250         # Smallest
+}
 
 # <!--- Region of Interest (ROI) - focus on traffic lanes, skip sky/borders --->
 ROI_TOP = 0.15     # Skip top 15% (sky)
@@ -161,9 +170,12 @@ def _detect_cars_worker(video_file, result_queue, worker_id):
                 # <!--- Filter detections: only count vehicles with sufficient size --->
                 vehicle_count = 0
                 for cid, box in zip(classes, boxes):
-                    if class_names[cid] in VEHICLE_CLASSES:
+                    class_name = class_names[cid]
+                    if class_name in VEHICLE_CLASSES:
                         x, y, w, h = box
-                        if w * h >= MIN_BOX_AREA:  # Filter tiny detections
+                        # Use per-class minimum area
+                        min_area = MIN_BOX_AREA.get(class_name, MIN_BOX_AREA_DEFAULT)
+                        if w * h >= min_area:  # Filter tiny detections
                             vehicle_count += 1
                 car_counts.append(vehicle_count)
                 processed_count += 1

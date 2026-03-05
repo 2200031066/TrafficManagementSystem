@@ -13,7 +13,16 @@ WEIGHTS_FILE = os.path.join(BASE_DIR, 'yolov4-tiny.weights')
 CONF_THRESHOLD = 0.5
 NMS_THRESHOLD = 0.65
 INPUT_SIZE = 416
-MIN_BOX_AREA = 600  # Filter out tiny detections (minimum 20x30 vehicle)
+
+# Per-class minimum box area (motorcycles are smaller than cars)
+MIN_BOX_AREA_DEFAULT = 600
+MIN_BOX_AREA = {
+    'car': 600,
+    'truck': 800,
+    'bus': 800,
+    'motorbike': 300,      # Much smaller than cars
+    'bicycle': 250         # Smallest
+}
 
 # <!--- Region of Interest (ROI) - focus on traffic lanes --->
 ROI_TOP = 0.15     # Skip top 15% (sky)
@@ -140,8 +149,9 @@ def process_video(input_path, output_path):
             class_name = class_names[classid]
             if class_name in VEHICLE_CLASSES:
                 x, y, w, h = box
-                # Filter out tiny detections (likely false positives)
-                if w * h < MIN_BOX_AREA:
+                # Filter out tiny detections using per-class minimum area
+                min_area = MIN_BOX_AREA.get(class_name, MIN_BOX_AREA_DEFAULT)
+                if w * h < min_area:
                     continue
                 
                 # Scale coordinates back to original frame
